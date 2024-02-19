@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Students</h1>
+
+    Name <input type="text" id="uname"/><br/>
+    Age <input type="text" id="uage"/><br/>
+
+    <button onclick="addUser();">add</button>
+
+    <div id="data"></div>
+
+    <button onclick="logout();" >logout</button>
+
+    <script>
+
+        async function welcomeMessage(){
+            let res = await getData("currentuser");
+
+            if(res.name){
+                alert("Hello, " + res.name + " You are logged in.");
+            }else{
+                location.href="/login"
+            }
+        }
+        welcomeMessage();
+
+        async function getData(url,options){
+            try
+            {
+                const res = await fetch("http://localhost:5000/"+url,options);
+                const resData = await res.json();
+                return resData;
+            }catch(err){
+                alert(err.msg);
+            }
+        }
+        getData("");
+
+        async function addUser(){
+            const uname = document.getElementById("uname").value;
+            const uage = document.getElementById("uage").value;
+            const body = {
+                name:uname,
+                age:Number(uage)
+            }
+
+            await getData("users/add",{
+                method:"POST",
+                headers:{
+                    "content-type":"application/json"
+                },
+                body:JSON.stringify(body)
+            })
+            readAllusers();
+        }
+
+        async function readAllusers(){
+            let res = await getData("users/readall")
+            let users = res.data;
+
+            let html = "";
+            let usersHtml = users.map(user => `<tr>
+                <td>${user.name}</td>
+                <td>${user.age}</td>
+                <td><button onclick="deleteUser('${user._id}')">Delete</button></td>
+                </tr>`)
+            html = "<table><tr><th>name</th><th>age</th></tr>"+usersHtml.join("\r\n")+"</table>"
+
+            document.getElementById("data").innerHTML=html;
+
+        }
+
+        async function deleteUser(id){
+            let res = await getData("users/delete/"+id);
+            alert(res.msg);
+            readAllusers();
+        }
+        readAllusers();
+
+        async function logout(){
+            getData("logout");
+        }
+    </script>
+</body>
+</html>
